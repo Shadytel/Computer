@@ -1,0 +1,19 @@
+Name:                   computer
+Version:                0.1
+Description:            Assembler and emulator for the computer
+License:                BSD3
+License-file:           LICENSE
+Author:                 Tim Carstens
+Maintainer:             intoverflow@gmail.com
+Build-Type:             Simple
+Cabal-Version:          >=1.8
+
+Library
+    Build-Depends:
+        base,
+        groom,
+        parsec
+    ghc-options:        -Wall
+    Exposed-Modules:
+        Assembler,
+        Assembly
