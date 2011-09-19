@@ -8,6 +8,8 @@ module Emulator where
 import Control.Monad.Error
 import Control.Monad.State
 import Data.Bits
+import Data.Function (on)
+import Data.List (intersperse, sortBy)
 import Data.Maybe (fromJust)
 
 
@@ -21,6 +23,12 @@ import Assembly
 newtype MachineInteger = MachineInteger Integer
 
 
+-- | Convert an 'AssembledWord' to a 'MachineInteger'
+awTomi :: AssembledWord -> MachineInteger
+awTomi (AssembledLiter i) = MachineInteger i
+awTomi (AssembledInstr i) = MachineInteger i
+
+
 -- | A 'fromIntegral' for 'MachineInteger's
 fromMachineInteger :: Num b => MachineInteger -> b
 fromMachineInteger (MachineInteger a) = fromIntegral a
@@ -30,7 +38,7 @@ fromMachineInteger (MachineInteger a) = fromIntegral a
 miLift :: (Integer -> Integer)
             -> MachineInteger
             -> MachineInteger
-miLift f (MachineInteger a) = MachineInteger $ f a .|. 0xfff
+miLift f (MachineInteger a) = MachineInteger $ f a .&. 0xfff
 
 
 -- | Lifts an integer function to 'MachineInteger's
@@ -38,7 +46,7 @@ miLift2 :: (Integer -> Integer -> Integer)
             -> MachineInteger
             -> MachineInteger
             -> MachineInteger
-miLift2 f (MachineInteger a) (MachineInteger b) = MachineInteger $ (a `f` b) .|. 0xfff
+miLift2 f (MachineInteger a) (MachineInteger b) = MachineInteger $ (a `f` b) .&. 0xfff
 
 
 instance Show MachineInteger where
@@ -49,6 +57,10 @@ instance Show MachineInteger where
 
 instance Eq MachineInteger where
     (MachineInteger a) == (MachineInteger b) = a .&. 0xfff == b .&. 0xfff
+
+
+instance Ord MachineInteger where
+    compare (MachineInteger a) (MachineInteger b) = compare (a .&. 0xfff) (b .&. 0xfff)
 
 
 instance Num MachineInteger where
@@ -77,7 +89,20 @@ data Machine
     = Machine
         { m_memory :: [(MachineInteger, MachineInteger)]
         }
-  deriving (Eq, Show)
+
+
+instance Show Machine where
+    show m = concat $
+                [ "Machine\n"
+                , "    { "
+                ] ++
+                intersperse "    , " (map p (m_memory m)) ++
+                [ "}" ]
+      where p :: (MachineInteger, MachineInteger) -> String
+            p (a, v) = let e = if a < 8
+                                then " (" ++ show (toEnum $ fromMachineInteger a :: Register) ++ ") "
+                                else ""
+                       in show a ++ ": " ++ show v ++ e ++ "\n"
 
 
 -- | A function for memory-mapped registers
@@ -121,6 +146,7 @@ setConditional (MachineInteger i) b =
 -- | Errors in the machine
 data MachineError
     = OtherError String
+    | Decorated Machine MachineError
     | CannotDeref MachineInteger
     | InvalidInstr MachineInteger
   deriving Show
@@ -133,6 +159,14 @@ instance Error MachineError where
 -- | A monad for maintaining machine state
 newtype MachineStateT m a = MachineStateT (StateT Machine (ErrorT MachineError m) a)
   deriving (Monad, MonadIO)
+
+
+-- | Run an action in the emulator
+runEmulatorT :: Monad m
+                    => MachineStateT m a
+                    -> Machine
+                    -> m (Either MachineError (a, Machine))
+runEmulatorT (MachineStateT action) state = runErrorT (runStateT action state)
 
 
 -- | Getting the machine state
@@ -152,7 +186,9 @@ modifyMachine = MachineStateT . modify
 
 -- | Throws an error
 machineError :: Monad m => MachineError -> MachineStateT m a
-machineError = MachineStateT . lift . throwError
+machineError err =
+     do s <- getMachine
+        MachineStateT $ lift $ throwError $ Decorated s err
 
 
 -- | Dereference a pointer
@@ -166,7 +202,9 @@ deref ptr =
 
 -- | Store at a pointer
 store :: Monad m => MachineInteger -> MachineInteger -> MachineStateT m ()
-store ptr val = modifyMachine (\ms -> ms{ m_memory = (ptr, val) : m_memory ms })
+store ptr val = modifyMachine (\ms -> ms{ m_memory = ins $ m_memory ms })
+  where ins mem = sortBy (compare `on` fst) $
+                    (ptr, val) : [ x | x <- mem, fst x /= ptr ]
 
 
 -- * Instructions
@@ -175,7 +213,7 @@ store ptr val = modifyMachine (\ms -> ms{ m_memory = (ptr, val) : m_memory ms })
 -- | Increments the instruction pointer by 1
 incIp :: Monad m => MachineStateT m ()
 incIp =
-     do i <- deref $ registerMemory ip
+     do i <- deref (registerMemory ip)
         store (registerMemory ip) (i+1)
 
 
@@ -187,7 +225,7 @@ fetch = deref (registerMemory ip) >>= deref
 -- | Executes an instruction
 execute :: Monad m => MachineInteger -> MachineStateT m ()
 execute instr'@(MachineInteger instr) =
-    let opcode = instr `shiftR` 6 .|. 0x3f
+    let opcode = instr `shiftR` 6 .&. 0x3f
     in case lookup opcode executors of
         Nothing -> machineError (InvalidInstr instr')
         Just fn -> fn instr
@@ -198,24 +236,24 @@ execute instr'@(MachineInteger instr) =
             ]
         logicFn =
             [ (1 `shiftL` 4 .|. fn, logicExecute fn)
-            | fn <- [0 .. 7]
+            | fn <- [0 .. 0xf]
             ]
         loadFn =
-            [ (10 `shiftL` 4 .|. p `shiftL` 2 .|. r, loadExecute p r)
+            [ (2 `shiftL` 4 .|. p `shiftL` 2 .|. r, loadExecute p r)
             | p <- [0 .. 3], r <- [0 .. 3]
             ]
         specialFn =
             [ (0x32, eqExecute)
             , (0x34, rotExecute), (0x35, rotExecute)
             ] ++
-            [ (0x1b `shiftL` 4 .|. c `shiftL` 3 .|. fn, immMathExecute (c == 1) fn)
+            [ (0x1b `shiftL` 1 .|. c, immMathExecute (c == 1))
             | c <- [0, 1], fn <- [0, 1]
             ]
 
 
 -- | Decodes a register
 decodeReg :: Integer -> Register
-decodeReg i = toEnum $ fromIntegral $ i .|. 0x7
+decodeReg i = toEnum $ fromIntegral $ i .&. 0x7
 
 
 -- | Decodes the destination register
@@ -298,7 +336,7 @@ logicExecute fn instr =
             0xc -> store (registerMemory bR) 0xfff
             0xd -> store (registerMemory bR) (complement a .|. b)
             0xe -> store (registerMemory bR) (a .|. b)
-            0xf -> do fl <- deref $ registerMemory flagsR
+            0xf -> do fl <- deref (registerMemory flagsR)
                       store (registerMemory flagsR) (setConditional fl (b == 0))
             _ -> fail $ "bad case in logicExecute: " ++ show fn
         incIp
@@ -363,11 +401,11 @@ rotExecute instr =
 -- | Execute an immediate math instruction
 immMathExecute :: Monad m
                     => Conditional              -- ^ Conditional control
-                    -> Integer                  -- ^ Function
                     -> Integer                  -- ^ The instruction
                     -> MachineStateT m ()
-immMathExecute c fn instr =
-     do incIp
+immMathExecute c instr =
+     do let fn = instr `shiftR` 3 .&. 0x7
+        incIp
         fl <- deref $ registerMemory flagsR
         let bR = decodeDst instr
         a <- fetch

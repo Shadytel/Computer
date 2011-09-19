@@ -1,6 +1,20 @@
 ; Tim Carstens
 ; 2011
 
+
+; Setup the registers
+.lit fib        ; R0 (ip)
+.lit 0x000      ; R1 (flags)
+.lit 0x000      ; R2
+.lit 0x000      ; R3
+.lit 0x000      ; R4
+.lit 0x001      ; R5
+.lit 0x001      ; R6
+.lit 0x005      ; R7
+
+; 1 1 2 3 5 8 13
+;     1 2 3 4 5
+
 ; Fibonacci calculator
 ;   r5: one number
 ;   r6: other number
