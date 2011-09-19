@@ -12,8 +12,10 @@ Library
     Build-Depends:
         base,
         groom,
+        mtl,
         parsec
     ghc-options:        -Wall
     Exposed-Modules:
         Assembler,
-        Assembly
+        Assembly,
+        Emulator
