@@ -42,6 +42,7 @@ In this table:
 \item ``KKKK'' is ``shift positions;''
 \item ``RR'' is ``(source) address mode;''
 \item ``QQ'' is ``(destination) address mode.''
+\item ``C'' controls whether or not execution of the instruction depends on the ``compare'' bit in the flags register.  When $0$, the instruction executes regardless; when $1$, the instruction executes only when the ``compare'' bit is also $1$.
 \end{itemize}
 
 Both ``RR'' and ``QQ'' are encoded as:
