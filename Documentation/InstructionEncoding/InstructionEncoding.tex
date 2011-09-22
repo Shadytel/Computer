@@ -1,0 +1,156 @@
+\title{Instruction Encoding}
+\date{\today}
+
+\documentclass[10pt]{article}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+
+\begin{document}
+\maketitle
+
+\section{Instructions}
+
+The computer has 12-bit words.  Every instruction is exactly one word in size, although trickery can be used to write instructions which seem to be two words in length.
+
+The table below summarizes the encoding of instructions on the machine.
+
+\begin{tabular}{|c|c|c|c|c|c||c|c|c|c|c|c||l|}
+\hline
+\multicolumn{6}{|c||}{Opcode} & \multicolumn{6}{c||}{Operands} & Description \\
+\hline
+\hline
+0 & 0 & C & \multicolumn{3}{c||}{PPP} & \multicolumn{3}{c|}{AAA} & \multicolumn{3}{c||}{BBB} & Math\\
+\hline
+0 & 1 & \multicolumn{4}{c||}{PPPP} & \multicolumn{3}{c|}{AAA} & \multicolumn{3}{c||}{BBB} & Logic \\
+\hline
+1 & 0 & \multicolumn{2}{c|}{RR} & \multicolumn{2}{c||}{QQ} & \multicolumn{3}{c|}{AAA} & \multicolumn{3}{c||}{BBB} & Load \\
+\hline
+1 & 1 & 0 & 0 & 1 & 0 & \multicolumn{3}{c|}{AAA} & \multicolumn{3}{c||}{BBB} & Sets ``compare'' on equality \\
+\hline
+1 & 1 & 0 & 1 & 0 & \multicolumn{4}{c|}{KKKK} & \multicolumn{3}{c||}{AAA} & Right rotate \\
+\hline
+1 & 1 & 0 & 1 & 1 & C & \multicolumn{3}{c|}{PPP} & \multicolumn{3}{c||}{BBB} & Immediate math and logic \\
+\hline
+\end{tabular}
+
+In this table:
+\begin{itemize}
+\item ``AAA'' is ``source register;''
+\item ``BBB'' is ``destination register;''
+\item ``PPP(P)'' is ``function selection;''
+\item ``KKKK'' is ``shift positions;''
+\item ``RR'' is ``(source) address mode;''
+\item ``QQ'' is ``(destination) address mode.''
+\end{itemize}
+
+Both ``RR'' and ``QQ'' are encoded as:
+
+\begin{tabular}{|c|l|c|}
+\hline
+Encoding & Description & Code \\
+\hline
+\hline
+0 & register direct & $r$ \\
+\hline
+1 & register dereference & $(r)$ \\
+\hline
+2 & register dereference with post-increment & $(r++)$ \\
+\hline
+3 & register dereference with pre-decrement & $(--r)$ \\
+\hline
+\end{tabular}
+
+
+\section{Math}
+
+The table below summarizes the math functions.
+
+\begin{tabular}{|c||l|l|}
+\hline
+Encoding (PPP) & Instruction & Behavior \\
+\hline
+\hline
+0 & add & $A+B \to B$ \\
+\hline
+1 & sub & $A-B \to B$ \\
+\hline
+2 & nsub & $B-A \to B$ \\
+\hline
+3 & dec & $B-1 \to B$ \\
+\hline
+4 & inc & $B+1 \to B$ \\
+\hline
+5 & neg & $-B \to B$ \\
+\hline
+6 & s.lt & Sets ``compare'' if $A < B$ (signed) \\
+\hline
+7 & u.lt & Sets ``compare'' if $A < B$ (unsigned) \\
+\hline
+\end{tabular}
+
+
+\section{Logic}
+
+The table below summarizes the math functions.
+
+\begin{tabular}{|c||l|l|}
+\hline
+Encoding (PPPP) & Instruction & Behavior \\
+\hline
+\hline
+0 & not & $\widehat B \to B$ \\
+\hline
+1 & nor & $\widehat{A+B} \to B$ \\
+\hline
+2 & and.n2 & $\widehat B A \to B$ \\
+\hline
+3 & clr & $0 \to B$ \\
+\hline
+4 & nand & $\widehat{BA} \to B$ \\
+\hline
+5 & copy.n1 & $\widehat A \to B$ \\
+\hline
+6 & xor & $B \oplus A \to B$ \\
+\hline
+7 & and.n1 & $B \widehat A \to B$ \\
+\hline
+8 & or.n2 & $\widehat B + A \to B$ \\
+\hline
+9 & xnor & $\widehat{B \oplus A} \to B$ \\
+\hline
+a & copy & $A \to B$ \\
+\hline
+b & and & $BA \to B$ \\
+\hline
+c & set & $1 \to B$ \\
+\hline
+d & or.n1 & $B + \widehat A \to B$ \\
+\hline
+e & or & $B + A \to B$ \\
+\hline
+f & tst & Sets the ``compare'' bit if $B$ is zero \\
+\hline
+\end{tabular}
+
+
+\section{Immediate math and logic}
+
+The table below summarizes the immediate-argument math and logic operations.
+
+\begin{tabular}{|c||l|l|}
+\hline
+Encoding (PPP) & Instruction & Behavior \\
+\hline
+\hline
+0 & iadd & $N+B \to B$ (arithmetic $+$) \\
+\hline
+1 & insub & $B-N \to B$ \\
+\hline
+2 & ior & $N+B \to B$ (logical $+$) \\
+\hline
+3 & iand & $NB \to B$ (logical ``and'') \\
+\hline
+\end{tabular}
+
+\end{document}
