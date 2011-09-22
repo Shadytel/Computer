@@ -387,7 +387,7 @@ assemble cws (cw@(Instr instr), addr) = Just $ assemble' instr
         --       ip is incremented before or after execution.  Will
         --       need to revisit this.
         assemble' (Jmp True lbl) = let i = fromJust $ lookup (Label lbl) cws
-                                       i' = i - addr
+                                       i' = i - addr - 2
                                    in (addr, (cw, [ immMath True 0 R0
                                                   , AssembledLiter i'
                                                   ]))

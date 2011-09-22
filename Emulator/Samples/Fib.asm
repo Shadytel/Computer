@@ -28,4 +28,5 @@ fib:
     dec     r7          ; decrement our iteration count
     jmp     fib         ; loop back to do more
     skip:
+    jmp skip
 
