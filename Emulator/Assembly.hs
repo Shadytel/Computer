@@ -48,6 +48,8 @@ data Instruction
     -- Immediate math operations
     | IAdd Conditional (Either Integer String) Register
     | INSub Conditional (Either Integer String) Register
+    | IOr Conditional (Either Integer String) Register
+    | IAnd Conditional (Either Integer String) Register
     -- Logic operations
     | Not Register
     | Nor Register Register

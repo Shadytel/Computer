@@ -18,4 +18,7 @@ Library
     Exposed-Modules:
         Assembler,
         Assembly,
-        Emulator
+        Disassembler,
+        Emulator,
+        MachineInteger,
+        Main

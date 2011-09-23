@@ -12,6 +12,17 @@
 .lit 0x001      ; R6
 .lit 0x005      ; R7
 
+; interrupt vector table
+.lit 0x000
+.lit 0x000
+.lit 0x000
+.lit 0x000
+.lit 0x000
+.lit 0x000
+.lit 0x000
+.lit 0x000
+.lit 0x000
+
 ; 1 1 2 3 5 8 13
 ;     1 2 3 4 5
 

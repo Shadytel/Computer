@@ -94,6 +94,7 @@ assemblyStyle = emptyDef
                        , "add", "sub", "nsub"
                        , "dec", "inc", "neg"
                        , "u.lt", "s.lt"
+                       , "iadd", "isub", "ior", "iand"
                        ]
 
 
@@ -189,7 +190,9 @@ parseMath = parseJmp <|>
             parseBinary "s.lt" SLt <|>
             parseBinary "u.lt" ULt <|>
             parseImm "iadd" IAdd <|>
-            parseImm "insub" INSub
+            parseImm "insub" INSub <|>
+            parseImm "ior" IOr <|>
+            parseImm "iand" IAnd
   where parseUnary :: String
                         -> (Conditional -> Register -> Instruction)
                         -> AssemblyParser u Instruction
