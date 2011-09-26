@@ -31,7 +31,7 @@ runAssemblyParser :: Parsec String u a
 runAssemblyParser parser state path =
      do c <- withFile path ReadMode $ \h ->
                  do c <- hGetContents h
-                    when (null c) (fail "empty file")
+                    when (length c == 0) (fail "empty file")
                     return c
         return (runParser parser state path c)
 
@@ -192,7 +192,8 @@ parseMath = parseJmp <|>
             parseImm "iadd" IAdd <|>
             parseImm "insub" INSub <|>
             parseImm "ior" IOr <|>
-            parseImm "iand" IAnd
+            parseImm "iand" IAnd <|>
+            parseEq
   where parseUnary :: String
                         -> (Conditional -> Register -> Instruction)
                         -> AssemblyParser u Instruction
@@ -223,6 +224,12 @@ parseMath = parseJmp <|>
             _ <- comma
             r <- parseRegister
             return (f c i r)
+        parseEq =
+         do _ <- try (reserved "eq")
+            r1 <- parseRegister
+            _ <- comma
+            r2 <- parseRegister
+            return (Eq r1 r2)
 
 
 -- | Parses a logic operation
@@ -265,7 +272,7 @@ parseLogic = parseUnary "not" Not <|>
 parseMov :: AssemblyParser u Instruction
 parseMov = parseMov1 <|> parseMov2
   where parseMov1 =
-         do try (reserved "movi")
+         do try (reserved "imov")
             (do i <- natural
                 _ <- comma
                 r <- parseRegisterMode
@@ -331,6 +338,8 @@ assignAddresses = snd . mapAccumL assignAddress 0
         codeSize (Instr (Movil _ _)) = 2
         codeSize (Instr (IAdd _ _ _)) = 2
         codeSize (Instr (INSub _ _ _)) = 2
+        codeSize (Instr (IOr _ _ _)) = 2
+        codeSize (Instr (IAnd _ _ _)) = 2
         codeSize _ = 1
 
 

@@ -233,7 +233,8 @@ mathExecute c fn instr =
         signedLt a b   = let MachineInteger d = a - b
                          in d .&. 0x800 /= 0
         unsignedLt :: MachineInteger -> MachineInteger -> Conditional
-        unsignedLt a b
+        unsignedLt a b = a < b
+{-
             | a == 0 && b == 0 = False
             | a == 0 = True
             | b == 0 = False
@@ -247,7 +248,7 @@ mathExecute c fn instr =
                           in if mba == mbb
                               then unsignedLt (clearBit a mba) (clearBit b mbb)
                               else mba < mbb
-
+-}
 
 -- | Executes a logic primitive
 logicExecute :: Monad m
