@@ -14,6 +14,7 @@ import Data.Maybe (fromJust)
 
 
 import Assembly
+import Disassembler
 import MachineInteger
 
 
@@ -37,8 +38,10 @@ instance Show Machine where
       where p :: (MachineInteger, MachineInteger) -> String
             p (a, v) = let e = if a < 8
                                 then " (" ++ show (toEnum $ fromMachineInteger a :: Register) ++ ") "
-                                else ""
+                                else " " ++ q v
                        in show a ++ ": " ++ show v ++ e ++ "\n"
+            q :: MachineInteger -> String
+            q mi = maybe "" show $ disassemble mi
 
 
 -- | A function for memory-mapped registers

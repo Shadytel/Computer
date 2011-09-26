@@ -1,5 +1,5 @@
 -- | A disassembler for the computer
-module Emulator where
+module Disassembler where
 
 
 import Data.Bits
@@ -28,7 +28,7 @@ disasMath instr =
     let c = instr .&. 0x200 /= 0
         src = disasSrc instr
         dst = disasDst instr
-        mf = lookup (instr .&. 0x1c0 `shiftR` 6)
+        mf = lookup ((instr .&. 0x1c0) `shiftR` 6)
                     [ (0, Add)
                     , (1, Sub)
                     , (2, Nsub)
@@ -48,7 +48,7 @@ disasLogic :: Integer -> Maybe Instruction
 disasLogic instr =
     let src = disasSrc instr
         dst = disasDst instr
-        mf = lookup (instr .&. 0x3c0 `shiftR` 6)
+        mf = lookup ((instr .&. 0x3c0) `shiftR` 6)
                     [ (0x0, \_ y -> Not y)
                     , (0x1, Nor)
                     , (0x2, AndN2)
@@ -76,8 +76,8 @@ disasLoad :: Integer -> Maybe Instruction
 disasLoad instr =
     let src = disasSrc instr
         dst = disasDst instr
-        src_mode = instr .&. 0x300 `shiftR` 8
-        dst_mode = instr .&. 0x0c0 `shiftR` 6
+        src_mode = (instr .&. 0x300) `shiftR` 8
+        dst_mode = (instr .&. 0x0c0) `shiftR` 6
         moded mode | mode == 0 = Direct
                    | mode == 1 = Indirect
                    | mode == 2 = IndirectInc
@@ -93,12 +93,12 @@ disasGeneric instr
     | instr .&. 0xfc0 == 0xc80 = let src = disasSrc instr
                                      dst = disasDst instr
                                  in Just $ Eq src dst
-    | instr .&. 0xf80 == 0xd00 = let k = instr .&. 0x078 `shiftR` 3
+    | instr .&. 0xf80 == 0xd00 = let k = (instr .&. 0x078) `shiftR` 3
                                      dst = disasDst instr
                                  in Just $ Rot k dst
     | instr .&. 0xf80 == 0xd80 = let c = instr .&. 0x040 /= 0
                                      dst = disasDst instr
-                                     mf = lookup (instr .&. 0x038 `shiftR` 3)
+                                     mf = lookup ((instr .&. 0x038) `shiftR` 3)
                                                  [ (0, IAdd)
                                                  , (1, INSub)
                                                  , (2, IOr)

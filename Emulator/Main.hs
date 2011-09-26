@@ -8,6 +8,7 @@ import Control.Monad
 import Assembler
 import Assembly
 import Emulator
+import MachineInteger
 
 
 -- * Entry to the emulator
