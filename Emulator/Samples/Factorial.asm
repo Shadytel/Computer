@@ -13,15 +13,15 @@
 .lit 0x000      ; R7
 
 ; interrupt vector table
-.lit 0x000
-.lit 0x000
-.lit 0x000
-.lit 0x000
-.lit 0x000
-.lit 0x000
-.lit 0x000
-.lit 0x000
-.lit 0x000
+;.lit 0x000
+;.lit 0x000
+;.lit 0x000
+;.lit 0x000
+;.lit 0x000
+;.lit 0x000
+;.lit 0x000
+;.lit 0x000
+;.lit 0x000
 
 
 ; Multiplication: the function
@@ -55,6 +55,10 @@ mult_done:
     mov     (--r2), ip
 
 
+.lit 0xfff
+.lit 0xfff
+
+
 ; Factorial: the function
 ;   r2: stack (ascending)
 ;   r6: gets clobbered
@@ -86,13 +90,20 @@ fact:
     mov     (--r2), r6      ; restore our r6
     ; now multiply
     mov     r6, (r2++)      ; push first factor
-    mov     r6, (r2++)      ; push second factor
-    imov    fact_done, (r2++)   ; push return point
+    mov     r7, (r2++)      ; push second factor
+    imov    fact_done_cleanup, (r2++)   ; push return point
     jmp     mult            ; do the multiplication
+fact_done_cleanup:
+    insub   2, r2           ; cleanup from our call
+    jmp     fact_done
 arg_less_two:
     mov r6, r7
 fact_done:
     mov (--r2), ip
+
+
+.lit 0xfff
+.lit 0xfff
 
 
 loop:
@@ -102,7 +113,7 @@ loop:
 stack:
     .lit 0xfff
     .lit 0xfff
-    .lit 0x003
+    .lit 0x005
     .lit loop
 stack_top:
 
